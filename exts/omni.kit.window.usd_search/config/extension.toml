@@ -1,6 +1,6 @@
 [package]
 # Semantic Versionning is used: https://semver.org/
-version = "1.0.1"
+version = "1.0.3"
 
 # Lists people or organizations that are considered the "authors" of the package.
 authors = [
@@ -36,7 +36,8 @@ preview_image = "data/preview.png"
 
 # Use omni.ui to build simple UI
 [dependencies]
-"omni.kit.uiapp" = {}
+"omni.ui" = {}
+"omni.kit.pipapi" = {}
 
 # Main module, it is publicly available as: import omni.kit.window.usd_search
 [[python.module]]
@@ -46,8 +47,24 @@ name = "omni.kit.window.usd_search"
 # This is the server for USD Search API
 host_url = "https://ai.api.nvidia.com/v1/omniverse/nvidia/usdsearch"
 
-# Alternative to NVIDIA_API_KEY environment variable
+# Alternative to NVIDIA_API_KEY environment variable for demo instance
+# For proper instance, it is x-api-key
 nvidia_api_key = "" # < Put API Key Here ( takes precedent )
+
+# If authorization required for proper instance. If True and nvidia_api_key is empty, use Nucleus token instead
+require_authorization = true
+
+# which Nucleus server or S3 bucket the USD Search instance is connected to
+# this is used for porper instance to fetch token while require_authorization but no nvidia_api_key
+nucleus_server = ""
+
+[python.pipapi]
+requirements = [
+    "async_lru==2.0.4",  # SWIPAT filed under: https://nvbugspro.nvidia.com/bug/4906814
+]
+
+# Allow going to online index. Required to be set to true for pip install call.
+use_online_index = true
 
 [[test]]
 # Extra dependencies only to be used during test run

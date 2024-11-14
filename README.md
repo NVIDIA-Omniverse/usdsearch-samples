@@ -1,16 +1,24 @@
 # USD Search Samples
 
-A collection of code samples for interfacing with `USD Search` API.
+A collection of code samples for interfacing with `USD Search API`. 
+
+>  **NOTE** : These scripts are intended only for demonstration purposes. They don't show full functionality of USD Search (e.g. image-based search is not supported). In order to experience the complete USD Search API functionality, please install the USD Search API helm chart as described in [USD Search API documentation](https://docs.omniverse.nvidia.com/services/latest/services/usd-search/get-started.html). 
+
+In order to extend it please refer to the [client library](https://github.com/NVIDIA-Omniverse/usdsearch-client).
 
 
 ## Overview
 
-`USD Search` is an AI-powered search for OpenUSD data, 3D models, images, and assets using text or image input. It is a collection of cloud-native microservices that help users navigate unstructured, untagged 3D data. It is capable of searching and indexing 3D asset databases, searching in-scene, and performing spatial searches, without requiring any manual tagging of assets.
+`USD Search API` is a collection of cloud-native microservices that enable developers, creators, and workflow specialists to efficiently search through vast collections of OpenUSD data, images, and other assets using natural language or image-based inputs. 
+
+With these production-ready microservices, developers can deploy USD Search API onto their own infrastructure.  With USD Search API’s artificial intelligence (AI) features, you can quickly locate untagged and unstructured 3D data and digital assets, saving time navigating unstructured, untagged 3D data. USD Search API is capable of searching and indexing 3D asset databases, as well as navigating complex 3D scenes to perform spatial searches, without requiring manual tagging of assets.
 
 
 ### Included Extensions
 
-- [**USD Search Window**](exts/omni.kit.window.usd_search#overview) - a simple, dockable UI for **GUI Kit Apps**.
+- [**USD Search Window**](exts/omni.kit.window.usd_search#overview) - a simple, dockable UI for **GUI Kit Apps**. This extension is a demonstration of how to integrate an API endpoint to a front-end experience. 
+    * It does not show complete USD Search API functionality. 
+    * In order to extend it please refer to the [client library and API documentation](https://github.com/NVIDIA-Omniverse/usdsearch-client) and update the REST API calls in the `send_url_request_async` method of the `omni/kit/window/usd_search/utils/ngc_connect.py` module.
 
 
 ## Installation
@@ -25,7 +33,7 @@ The workflow is broken down into key steps :
 
 ### 1 - Obtain API Key
 
-[**Click to get API Key**](https://nvidia.github.io/GenerativeAIExamples/latest/api-catalog.html#get-an-api-key-for-the-accessing-models-on-the-api-catalog) - add to **NVIDIA_API_KEY** `env.variable` **NOW** or `extension.toml` files **LATER**.
+[**Click to get API Key**](https://build.nvidia.com/nvidia/usdsearch?signin=true&api_key=true) - add to **NVIDIA_API_KEY** `env.variable` **NOW** or `extension.toml` files **LATER**.
 
 >  **NOTE :** *Restart relevant **kit-app terminals** after changing environment variables.*
 
@@ -34,7 +42,9 @@ The workflow is broken down into key steps :
 
 > **CREATE - BUT DON'T BUILD OR LAUNCH APPLICATION**
 
-[**Click for instructions**](https://github.com/NVIDIA-Omniverse/kit-app-template?tab=readme-ov-file#quick-start) - to clone **`kit-app-template`** and create app *(if you haven't already)*.
+[**Click for instructions**](https://github.com/NVIDIA-Omniverse/kit-app-template?tab=readme-ov-file#quick-start) - to clone **`kit-app-template`** and create app *(if you haven't already)*. 
+
+> **NOTE :** For this particular sample any Kit App template could be used.
 
 
 ### 3 - Clone and Configure Extensions
@@ -54,7 +64,7 @@ git clone https://github.com/NVIDIA-Omniverse/usdsearch-samples
 
 > Using Command Line or File Manager:
 
-Copy contents from `usdsearch-samples/exts/` to `kit-app-template/source/extensions/`
+Copy contents from `usdsearch-samples/exts/` to `kit-app-template/source/extensions/` (create the folder if it does not exist).
 
 #### 3.2 - Insert API Key
 

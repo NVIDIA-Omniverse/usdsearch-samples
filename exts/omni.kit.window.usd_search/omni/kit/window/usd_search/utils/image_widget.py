@@ -10,10 +10,11 @@
 
 __all__ = ["USDSearchImageWidget"]
 
-import omni.ui as ui
-import logging
 import asyncio
+import logging
 from typing import List
+
+import omni.ui as ui
 from omni.ui import color as cl
 
 logger = logging.getLogger(__name__)
@@ -34,10 +35,11 @@ class USDSearchImageWidget:
     Creates an image widget grid array for USD Search Results.
     """
     def __init__(
-        self, query: str, images: List[str], usd_paths: List[str], bounding_boxs: List[list] = [], status=None, *args, **kwargs
+        self, query: str, service_url, images: List[str], usd_paths: List[str], bounding_boxs: List[list] = [], status=None, *args, **kwargs
     ):
         self._frame = ui.Frame(*args, **kwargs)
         self._query = query
+        self._service_url = service_url
         self._image_preview = None
         self._images = images
         self._usd_paths = usd_paths
@@ -59,7 +61,7 @@ class USDSearchImageWidget:
                 ui.Spacer(height=self._pad)
                 # Make results / status label.
                 if len(self._images) > 0:
-                    results_text = f'Found {len(self._images)} Assets for "{self._query}"'
+                    results_text = f'Found {len(self._images)} Assets for "{self._query}"\nfrom {self._service_url}'
                 else:
                     results_text = f'No matches for "{self._query}" - try warehouse terms.'
 

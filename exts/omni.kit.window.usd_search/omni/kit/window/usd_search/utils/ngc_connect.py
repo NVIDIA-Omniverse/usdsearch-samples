@@ -8,12 +8,19 @@
 # without an express license agreement from NVIDIA CORPORATION or
 # its affiliates is strictly prohibited.
 
-
-import logging
 import json
-import omni.kit.pipapi
-omni.kit.pipapi.install("requests")
-import requests
+import logging
+
+import aiohttp
+import carb.settings
+import omni.client
+from async_lru import alru_cache
+
+
+@alru_cache(ttl=900)
+async def get_nucleus_server_token(nucleus_server: str):
+    return await omni.client.refresh_auth_token_async(nucleus_server)
+
 
 logger = logging.getLogger(__name__)
 
@@ -27,35 +34,47 @@ class NgcConnect:
         self._payload = None
         self._api_key = None
         self._response = None
+        self._is_proper_instance = False
+        self._settings = carb.settings.get_settings()
 
-    def set_api_key(self, api_key):
-        self._api_key = api_key
-        self.set_headers()
-
-    def set_headers(self):
+    async def set_headers_async(self, url: str):
         self._headers = {
-            "Authorization": "Bearer {}".format(self._api_key),
             "Accept": "application/json",
             "Content-Type": "application/json",
         }
+        if self._is_proper_instance:
+            require_authorization = self._settings.get("/exts/omni.kit.window.usd_search/require_authorization")
+            if require_authorization:
+                if self._api_key:
+                    self._headers["x-api-key"] = self._api_key
+                else:
+                    # Use Nucleus token
+                    nucleus_server = self._settings.get("/exts/omni.kit.window.usd_search/nucleus_server")
+                    if nucleus_server:
+                        result, token = await get_nucleus_server_token(nucleus_server)
+                        if result == omni.client.Result.OK:
+                            self._headers["Authorization"] = "Bearer {}".format(token)
+                        else:
+                            logger.error(f"Authorization is required for URL request but no API key and failed to get token from {nucleus_server} with error {result}")
+        else:
+            self._headers["Authorization"] = "Bearer {}".format(self._api_key)
 
     def set_payload(self, payload):
         self._payload = payload
 
-    # #TODO: Make non-blocking
-    def send_api_request(self, url):
+    async def send_api_request_async(self, url: str):
         """Handle request via API - REQUIRES KEY"""
 
         if not self._payload.get("description", None):
             return
 
-        if self._api_key is None:
-            import carb.settings
+        self._is_proper_instance = "ai.api.nvidia.com" not in url.lower()
 
-            settings = carb.settings.get_settings().get("/exts/omni.kit.window.usd_search/nvidia_api_key")
+        if self._api_key is None:
+            settings = self._settings.get("/exts/omni.kit.window.usd_search/nvidia_api_key")
             if settings:
                 self._api_key = settings
-            else:
+            elif not self._is_proper_instance:
                 # Get from NVIDIA_API_KEY environment variable
                 import os
 
@@ -63,30 +82,31 @@ class NgcConnect:
                 if self._api_key is None:
                     logger.error("NVIDIA_API_KEY is required for URL request")
 
-        self.set_headers()
+        await self.set_headers_async(url)
         self._payload = json.dumps(self._payload)
         logger.info(f"Invoked URL: {url}")
-        logger.info(f"Headers used: {self._headers}")
         logger.info(f"Payload used: {self._payload}")
+
         try:
-            # Send the GET request
-            self._response = requests.post(url, headers=self._headers, data=self._payload)
-            self._response.raise_for_status()  # Raise an exception for non-200 status codes
-            logger.info(f"Response Code: {self._response.status_code}")
-            result = self._response.json()
-            # Process the JSON data (same the images )
-            filtered_result = self._process_json_data(result)
-            return filtered_result
-        except requests.RequestException as e:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, headers=self._headers, data=self._payload) as response:
+                    response.raise_for_status()
+                    result = await response.json()
+                    filtered_result = self._process_json_data(result)
+                    return filtered_result
+        except aiohttp.ClientResponseError as e:
+            return {"error": f"API request failed: {str(e)}"}
+        except Exception as e:
             return {"error": f"API request failed: {str(e)}"}
 
-    def send_url_request(self, url):
+
+    async def send_url_request_async(self, url):
         """Handle request via URL"""
 
         if not self._payload.get("description", None):
             return
 
-        self.set_headers()
+        await self.set_headers_async(url)
         logger.info(f"Headers used: {self._headers}")
 
         # Construct the URL with query parameters
@@ -98,15 +118,15 @@ class NgcConnect:
         URLP += f'return_images={self._payload.get("return_images", "True")}&'
 
         try:
-            # Send the GET request
-            response = requests.get(URLP)
-            response.raise_for_status()  # Raise an exception for non-200 status codes
-            result = response.json()
-
-            # Process the JSON data (same the images )
-            filtered_result = self._process_json_data(result)
-            return filtered_result
-        except requests.RequestException as e:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(URLP, headers=self._headers) as response:
+                    response.raise_for_status()
+                    result = await response.json()
+                    filtered_result = self._process_json_data(result)
+                    return filtered_result
+        except aiohttp.ClientResponseError as e:
+            return {"error": f"API request failed: {str(e)}"}
+        except Exception as e:
             return {"error": f"API request failed: {str(e)}"}
 
     def _process_json_data(self, json_data):
